@@ -60,6 +60,7 @@ class MARCModel < ASpaceExport::ExportModel
   end
 
 	def handle_user_defined(user_defined)
+    return false if user_defined.nil?
 		df('852', ' ', ' ').with_sfs(['j', user_defined['string_1']])
 		df('035', ' ', ' ').with_sfs(['a', user_defined['string_2']])
 		df('035', ' ', ' ').with_sfs(['a', user_defined['string_3']])
