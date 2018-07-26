@@ -67,6 +67,79 @@ class MARCModel < ASpaceExport::ExportModel
 		df('035', ' ', ' ').with_sfs(['a', user_defined['string_4']])
 	end
 
+  #Remove processinfo from 500 mapping and move to 583
+  def handle_notes(notes)
+
+    notes.each do |note|
+
+      prefix =  case note['type']
+                when 'dimensions'; "Dimensions"
+                when 'physdesc'; "Physical Description note"
+                when 'materialspec'; "Material Specific Details"
+                when 'physloc'; "Location of resource"
+                when 'phystech'; "Physical Characteristics / Technical Requirements"
+                when 'physfacet'; "Physical Facet"
+                when 'processinfo'; "Processing Information"
+                when 'separatedmaterial'; "Materials Separated from the Resource"
+                else; nil
+                end
+
+      marc_args = case note['type']
+
+                  when 'arrangement', 'fileplan'
+                    ['351', 'a']
+                  # Remove processinfo from 500
+                  when 'odd', 'dimensions', 'physdesc', 'materialspec', 'physloc', 'phystech', 'physfacet', 'separatedmaterial'
+                    ['500','a']
+                  when 'accessrestrict'
+                    ['506','a']
+                  when 'scopecontent'
+                    ['520', '2', ' ', 'a']
+                  when 'abstract'
+                    ['520', '3', ' ', 'a']
+                  when 'prefercite'
+                    ['524', ' ', ' ', 'a']
+                  when 'acqinfo'
+                    ind1 = note['publish'] ? '1' : '0'
+                    ['541', ind1, ' ', 'a']
+                  when 'relatedmaterial'
+                    ['544','d']
+                  when 'bioghist'
+                    ['545','a']
+                  when 'custodhist'
+                    ind1 = note['publish'] ? '1' : '0'
+                    ['561', ind1, ' ', 'a']
+                  # Add processinfo to 583
+                  when 'appraisal', 'processinfo'
+                    ind1 = note['publish'] ? '1' : '0'
+                    ['583', ind1, ' ', 'a']
+                  when 'accruals'
+                    ['584', 'a']
+                  when 'altformavail'
+                    ['535', '2', ' ', 'a']
+                  when 'originalsloc'
+                    ['535', '1', ' ', 'a']
+                  when 'userestrict', 'legalstatus'
+                    ['540', 'a']
+                  when 'langmaterial'
+                    ['546', 'a']
+                  else
+                    nil
+                  end
+
+      unless marc_args.nil?
+        text = prefix ? "#{prefix}: " : ""
+        text += ASpaceExport::Utils.extract_note_text(note, @include_unpublished)
+
+        # only create a tag if there is text to show (e.g., marked published or exporting unpublished)
+        if text.length > 0
+          df!(*marc_args[0...-1]).with_sfs([marc_args.last, *Array(text)])
+        end
+      end
+
+    end
+  end
+
 	#Remove 555 from ead_loc export, we're doing it above with fa note
   def handle_ead_loc(ead_loc)
     df('856', '4', '2').with_sfs(
