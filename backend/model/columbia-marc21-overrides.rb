@@ -91,8 +91,6 @@ class MARCModel < ASpaceExport::ExportModel
                   # Remove processinfo from 500
                   when 'odd', 'dimensions', 'physdesc', 'materialspec', 'physloc', 'phystech', 'physfacet', 'separatedmaterial'
                     ['500','a']
-                  when 'accessrestrict'
-                    ['506','a']
                   # we would prefer that information from both the note and subnote appear in subfields of a 506 element, like this:
                     # <datafield ind1="1" ind2=" " tag="506">
                     # <subfield code="a">Available</subfield> <!-- from the category list -->
