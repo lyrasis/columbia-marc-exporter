@@ -34,7 +34,7 @@ class MARCModel < ASpaceExport::ExportModel
 
      if(args[0] == "700" || args[0] == "710" || args[0] == "035")
        @datafields[rand(10000)] = @@datafield.new(*args)
-     else 
+     else
        @datafields[args.to_s]
      end
     else
@@ -93,6 +93,21 @@ class MARCModel < ASpaceExport::ExportModel
                     ['500','a']
                   when 'accessrestrict'
                     ['506','a']
+                  # we would prefer that information from both the note and subnote appear in subfields of a 506 element, like this:
+                    # <datafield ind1="1" ind2=" " tag="506">
+                    # <subfield code="a">Available</subfield> <!-- from the category list -->
+                    # <subfield code="a">Restricted until 2020</subfield> <!-- from the subnote/text/content field -->
+                    # </datafield>
+                  when 'accessrestrict'
+                    result = note['rights_restriction']['local_access_restriction_type']
+                    ind1 = note['publish'] ? '1' : '0'
+                    if result != []
+                      result.each do |lart|
+                        df('506', ind1).with_sfs(['a', lart], ['a', note['subnotes'][0]['content']])
+                      end
+                    else
+                      ['506',ind1,'', 'a']
+                    end
                   when 'scopecontent'
                     ['520', '2', ' ', 'a']
                   when 'abstract'
@@ -150,4 +165,4 @@ class MARCModel < ASpaceExport::ExportModel
 
 
 
-end  
+end
