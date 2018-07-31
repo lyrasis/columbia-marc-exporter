@@ -101,7 +101,7 @@ class MARCModel < ASpaceExport::ExportModel
                     ind1 = note['publish'] ? '1' : '0'
                     if result != []
                       result.each do |lart|
-                        df('506', ind1).with_sfs(['f', lart], ['a', note['subnotes'][0]['content']])
+                        df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
                       end
                     else
                       ['506',ind1,'', 'a']
