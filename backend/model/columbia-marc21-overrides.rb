@@ -32,9 +32,9 @@ class MARCModel < ASpaceExport::ExportModel
       # based on MARCModel#datafields, it looks like the hash keys are thrown away outside of this class, so we can use anything as a key.
       # At the moment, we don't want to change this behavior too much in case something somewhere else is relying on the original behavior.
 
-     if(args[0] == "700" || args[0] == "710" || args[0] == "035")
+     if(args[0] == "700" || args[0] == "710" || args[0] == "035" || args[0] == "506")
        @datafields[rand(10000)] = @@datafield.new(*args)
-     else 
+     else
        @datafields[args.to_s]
      end
     else
@@ -165,4 +165,4 @@ class MARCModel < ASpaceExport::ExportModel
 
 
 
-end  
+end
