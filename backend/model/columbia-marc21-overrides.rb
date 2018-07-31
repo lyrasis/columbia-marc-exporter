@@ -32,9 +32,9 @@ class MARCModel < ASpaceExport::ExportModel
       # based on MARCModel#datafields, it looks like the hash keys are thrown away outside of this class, so we can use anything as a key.
       # At the moment, we don't want to change this behavior too much in case something somewhere else is relying on the original behavior.
 
-     if(args[0] == "700" || args[0] == "710" || args[0] == "035")
+     if(args[0] == "700" || args[0] == "710" || args[0] == "035" || args[0] == "506")
        @datafields[rand(10000)] = @@datafield.new(*args)
-     else 
+     else
        @datafields[args.to_s]
      end
     else
@@ -67,6 +67,94 @@ class MARCModel < ASpaceExport::ExportModel
 		df('035', ' ', ' ').with_sfs(['a', user_defined['string_4']])
 	end
 
+  #Remove processinfo from 500 mapping and move to 583
+  def handle_notes(notes)
+
+    notes.each do |note|
+
+      prefix =  case note['type']
+                when 'dimensions'; "Dimensions"
+                when 'physdesc'; "Physical Description note"
+                when 'materialspec'; "Material Specific Details"
+                when 'physloc'; "Location of resource"
+                when 'phystech'; "Physical Characteristics / Technical Requirements"
+                when 'physfacet'; "Physical Facet"
+                when 'processinfo'; "Processing Information"
+                when 'separatedmaterial'; "Materials Separated from the Resource"
+                else; nil
+                end
+
+      marc_args = case note['type']
+
+                  when 'arrangement', 'fileplan'
+                    ['351', 'a']
+                  # Remove processinfo from 500
+                  when 'odd', 'dimensions', 'physdesc', 'materialspec', 'physloc', 'phystech', 'physfacet', 'separatedmaterial'
+                    ['500','a']
+                  # we would prefer that information from both the note and subnote appear in subfields of a 506 element, like this:
+                    # <datafield ind1="1" ind2=" " tag="506">
+                    # <subfield code="a">Available</subfield> <!-- from the category list -->
+                    # <subfield code="a">Restricted until 2020</subfield> <!-- from the subnote/text/content field -->
+                    # </datafield>
+                  when 'accessrestrict'
+                    result = note['rights_restriction']['local_access_restriction_type']
+                    ind1 = note['publish'] ? '1' : '0'
+                    if result != []
+                      result.each do |lart|
+                        df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
+                      end
+                    else
+                      ['506',ind1,'', 'a']
+                    end
+                  when 'scopecontent'
+                    ['520', '2', ' ', 'a']
+                  when 'abstract'
+                    ['520', '3', ' ', 'a']
+                  when 'prefercite'
+                    ['524', ' ', ' ', 'a']
+                  when 'acqinfo'
+                    ind1 = note['publish'] ? '1' : '0'
+                    ['541', ind1, ' ', 'a']
+                  when 'relatedmaterial'
+                    ['544','d']
+                  when 'bioghist'
+                    ['545','a']
+                  when 'custodhist'
+                    ind1 = note['publish'] ? '1' : '0'
+                    ['561', ind1, ' ', 'a']
+                  # Add processinfo to 583
+                  when 'appraisal', 'processinfo'
+                    ind1 = note['publish'] ? '1' : '0'
+                    ['583', ind1, ' ', 'a']
+                  when 'accruals'
+                    ['584', 'a']
+                  when 'altformavail'
+                    ['535', '2', ' ', 'a']
+                  when 'originalsloc'
+                    ['535', '1', ' ', 'a']
+                  when 'userestrict', 'legalstatus'
+                    ['540', 'a']
+                  when 'langmaterial'
+                    ['546', 'a']
+                  else
+                    nil
+                  end
+
+      unless marc_args.nil?
+        text = prefix ? "#{prefix}: " : ""
+        text += ASpaceExport::Utils.extract_note_text(note, @include_unpublished)
+
+        # only create a tag if there is text to show (e.g., marked published or exporting unpublished) and if there are not multiple local access restriction types (if there are, that's already handled above)
+        unless note['type'] == 'accessrestrict' && result != []
+          if text.length > 0
+            df!(*marc_args[0...-1]).with_sfs([marc_args.last, *Array(text)])
+          end
+        end
+      end
+
+    end
+  end
+
 	#Remove 555 from ead_loc export, we're doing it above with fa note
   def handle_ead_loc(ead_loc)
     df('856', '4', '2').with_sfs(
@@ -77,4 +165,4 @@ class MARCModel < ASpaceExport::ExportModel
 
 
 
-end  
+end
