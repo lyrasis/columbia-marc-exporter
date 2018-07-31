@@ -32,7 +32,7 @@ class MARCModel < ASpaceExport::ExportModel
       # based on MARCModel#datafields, it looks like the hash keys are thrown away outside of this class, so we can use anything as a key.
       # At the moment, we don't want to change this behavior too much in case something somewhere else is relying on the original behavior.
 
-     if(args[0] == "700" || args[0] == "710" || args[0] == "035")
+     if(args[0] == "700" || args[0] == "710" || args[0] == "035" || args[0] == "506")
        @datafields[rand(10000)] = @@datafield.new(*args)
      else
        @datafields[args.to_s]
@@ -101,7 +101,7 @@ class MARCModel < ASpaceExport::ExportModel
                     ind1 = note['publish'] ? '1' : '0'
                     if result != []
                       result.each do |lart|
-                        df('506', ind1).with_sfs(['a', lart], ['a', note['subnotes'][0]['content']])
+                        df('506', ind1).with_sfs(['f', lart], ['a', note['subnotes'][0]['content']])
                       end
                     else
                       ['506',ind1,'', 'a']
@@ -145,8 +145,10 @@ class MARCModel < ASpaceExport::ExportModel
         text += ASpaceExport::Utils.extract_note_text(note, @include_unpublished)
 
         # only create a tag if there is text to show (e.g., marked published or exporting unpublished)
-        if text.length > 0
-          df!(*marc_args[0...-1]).with_sfs([marc_args.last, *Array(text)])
+        unless note['type'] == 'accessrestrict'
+          if text.length > 0
+            df!(*marc_args[0...-1]).with_sfs([marc_args.last, *Array(text)])
+          end
         end
       end
 
