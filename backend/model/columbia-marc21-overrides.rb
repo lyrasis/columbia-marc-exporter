@@ -93,18 +93,22 @@ class MARCModel < ASpaceExport::ExportModel
                     ['500','a']
                   # we would prefer that information from both the note and subnote appear in subfields of a 506 element, like this:
                     # <datafield ind1="1" ind2=" " tag="506">
-                    # <subfield code="a">Available</subfield> <!-- from the category list -->
                     # <subfield code="a">Restricted until 2020</subfield> <!-- from the subnote/text/content field -->
+                    # <subfield code="f">Available</subfield> <!-- from the category list -->
                     # </datafield>
                   when 'accessrestrict'
-                    result = note['rights_restriction']['local_access_restriction_type']
                     ind1 = note['publish'] ? '1' : '0'
-                    if result != []
-                      result.each do |lart|
-                        df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
+                    if note['rights_restriction']
+                      result = note['rights_restriction']['local_access_restriction_type']
+                      if result != []
+                        result.each do |lart|
+                          df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
+                        end
+                      else
+                        df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']])
                       end
                     else
-                      ['506',ind1,'', 'a']
+                      ['506', ind1 ,'', 'a']
                     end
                   when 'scopecontent'
                     ['520', '2', ' ', 'a']
@@ -145,7 +149,7 @@ class MARCModel < ASpaceExport::ExportModel
         text += ASpaceExport::Utils.extract_note_text(note, @include_unpublished)
 
         # only create a tag if there is text to show (e.g., marked published or exporting unpublished) and if there are not multiple local access restriction types (if there are, that's already handled above)
-        unless note['type'] == 'accessrestrict' && result != []
+        unless note['type'] == 'accessrestrict' && note['rights_restriction']
           if text.length > 0
             df!(*marc_args[0...-1]).with_sfs([marc_args.last, *Array(text)])
           end
