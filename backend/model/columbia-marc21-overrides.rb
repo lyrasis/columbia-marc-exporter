@@ -47,10 +47,12 @@ class MARCModel < ASpaceExport::ExportModel
 	#Add an 035 based on string + id0
   def handle_id(*ids)
     ids.reject!{|i| i.nil? || i.empty?}
-    df('099', ' ', ' ').with_sfs(['a', ids.join('.')])
-    df('852', ' ', ' ').with_sfs(['c', ids.join('.')])
-		last035 = 'CULASPC-' + ids[0]
-		df('035', ' ', ' ').with_sfs(['a', last035])
+    unless ids.empty?
+      df('099', ' ', ' ').with_sfs(['a', ids.join('.')])
+      df('852', ' ', ' ').with_sfs(['c', ids.join('.')])
+      last035 = 'CULASPC-' + ids[0]
+      df('035', ' ', ' ').with_sfs(['a', last035])
+    end
   end
 
 	#Don't export language to random 04x fields
@@ -79,7 +81,7 @@ class MARCModel < ASpaceExport::ExportModel
                 when 'physloc'; "Location of resource"
                 when 'phystech'; "Physical Characteristics / Technical Requirements"
                 when 'physfacet'; "Physical Facet"
-                when 'processinfo'; "Processing Information"
+                #when 'processinfo'; "Processing Information"
                 when 'separatedmaterial'; "Materials Separated from the Resource"
                 else; nil
                 end
