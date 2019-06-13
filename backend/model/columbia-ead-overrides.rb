@@ -1,9 +1,6 @@
 class EADSerializer < ASpaceExport::Serializer
   serializer_for :ead
 
-  require 'pp'
-
-  
   def stream(data)
     @stream_handler = ASpaceExport::StreamHandler.new
     @fragments = ASpaceExport::RawXMLHandler.new
