@@ -60,7 +60,9 @@ class EADSerializer < ASpaceExport::Serializer
             xml.unitid (0..3).map{|i| data.send("id_#{i}")}.compact.join('.')
 
             #Add second <unitid> with MS Number from user defined field
-            xml.unitid data.user_defined['string_1']
+            if (!data.user_defined.nil? && !data.user_defined['string_1'].nil? && !data.user_defined['string_1'].empty?)
+              xml.unitid data.user_defined['string_1']
+            end
 
             if @include_unpublished
               data.external_ids.each do |exid|
