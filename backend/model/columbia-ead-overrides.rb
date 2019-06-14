@@ -58,6 +58,8 @@ class EADSerializer < ASpaceExport::Serializer
             serialize_origination(data, xml, @fragments)
 
             xml.unitid (0..3).map{|i| data.send("id_#{i}")}.compact.join('.')
+
+            #Add second <unitid> with MS Number from user defined field
             xml.unitid data.user_defined['string_1']
 
             if @include_unpublished
