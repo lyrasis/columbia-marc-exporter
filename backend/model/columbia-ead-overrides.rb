@@ -37,14 +37,6 @@ class EADSerializer < ASpaceExport::Serializer
           xml.did {
 
 
-            if (val = data.language)
-              xml.langmaterial {
-                xml.language(:langcode => val) {
-                  xml.text I18n.t("enumerations.language_iso639_2.#{val}", :default => val)
-                }
-              }
-            end
-
             if (val = data.repo.name)
               xml.repository {
                 xml.corpname { sanitize_mixed_content(val, xml, @fragments) }
@@ -68,6 +60,10 @@ class EADSerializer < ASpaceExport::Serializer
               data.external_ids.each do |exid|
                 xml.unitid  ({ "audience" => "internal", "type" => exid['source'], "identifier" => exid['external_id']}) { xml.text exid['external_id']}
               end
+            end
+
+            if (languages = data.lang_materials)
+              serialize_languages(languages, xml)
             end
 
             serialize_extents(data, xml, @fragments)
