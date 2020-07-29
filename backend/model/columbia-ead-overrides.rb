@@ -63,7 +63,7 @@ class EADSerializer < ASpaceExport::Serializer
             end
 
             if (languages = data.lang_materials)
-              serialize_languages(languages, xml)
+              serialize_languages(languages, xml, @fragments)
             end
 
             serialize_extents(data, xml, @fragments)
