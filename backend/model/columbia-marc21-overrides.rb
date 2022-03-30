@@ -100,17 +100,19 @@ class MARCModel < ASpaceExport::ExportModel
                     # </datafield>
                   when 'accessrestrict'
                     ind1 = note['publish'] ? '1' : '0'
-                    if note['rights_restriction']
-                      result = note['rights_restriction']['local_access_restriction_type']
-                      if result != []
-                        result.each do |lart|
-                          df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
+                    if note['publish'] || @include_unpublished
+                      if note['rights_restriction']
+                        result = note['rights_restriction']['local_access_restriction_type']
+                        if result != []
+                          result.each do |lart|
+                            df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
+                          end
+                        else
+                          df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']])
                         end
                       else
-                        df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']])
+                        ['506', ind1 ,'', 'a']
                       end
-                    else
-                      ['506', ind1 ,'', 'a']
                     end
                   when 'scopecontent'
                     ['520', '2', ' ', 'a']
