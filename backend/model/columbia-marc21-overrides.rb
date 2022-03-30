@@ -3,27 +3,27 @@ class MARCModel < ASpaceExport::ExportModel
 
   include JSONModel
 
-	#don't export empty fields when using df_handler
-	def self.df_handler(name, tag, ind1, ind2, code)
-		define_method(name) do |val|
-			if val
-				df(tag, ind1, ind2).with_sfs([code, val])
-			end
-		end
-		name.to_sym
-	end
+  #don't export empty fields when using df_handler
+  def self.df_handler(name, tag, ind1, ind2, code)
+    define_method(name) do |val|
+      if val
+        df(tag, ind1, ind2).with_sfs([code, val])
+      end
+    end
+    name.to_sym
+  end
 
   @resource_map = {
     [:id_0, :id_1, :id_2, :id_3] => :handle_id,
     :notes => :handle_notes,
-		:user_defined => :handle_user_defined,
+    :user_defined => :handle_user_defined,
     :finding_aid_description_rules => df_handler('fadr', '040', ' ', ' ', 'e'),
     :finding_aid_note => df_handler('fan', '555', '0', ' ', 'a'),
     :ead_location => :handle_ead_loc
   }
 
-	#Picked from new release, but added 035
-	def df(*args)
+  #Picked from new release, but added 035
+  def df(*args)
     if @datafields.has_key?(args.to_s)
       # Manny Rodriguez: 3/16/18
       # Bugfix for ANW-146
@@ -44,7 +44,7 @@ class MARCModel < ASpaceExport::ExportModel
     end
   end
 
-	#Add an 035 based on string + id0
+  #Add an 035 based on string + id0
   def handle_id(*ids)
     ids.reject!{|i| i.nil? || i.empty?}
     unless ids.empty?
@@ -55,19 +55,19 @@ class MARCModel < ASpaceExport::ExportModel
     end
   end
 
-	#Don't export language to random 04x fields
-	#Should be fixed upstream soon
+  #Don't export language to random 04x fields
+  #Should be fixed upstream soon
   def handle_language(langcode)
     df('041', '0', ' ').with_sfs(['a', langcode])
   end
 
-	def handle_user_defined(user_defined)
+  def handle_user_defined(user_defined)
     return false if user_defined.nil?
-		df('852', ' ', ' ').with_sfs(['j', user_defined['string_1']])
-		df('035', ' ', ' ').with_sfs(['a', user_defined['string_2']])
-		df('035', ' ', ' ').with_sfs(['a', user_defined['string_3']])
-		df('035', ' ', ' ').with_sfs(['a', user_defined['string_4']])
-	end
+    df('852', ' ', ' ').with_sfs(['j', user_defined['string_1']])
+    df('035', ' ', ' ').with_sfs(['a', user_defined['string_2']])
+    df('035', ' ', ' ').with_sfs(['a', user_defined['string_3']])
+    df('035', ' ', ' ').with_sfs(['a', user_defined['string_4']])
+  end
 
   #Remove processinfo from 500 mapping and move to 583
   def handle_notes(notes)
@@ -100,17 +100,19 @@ class MARCModel < ASpaceExport::ExportModel
                     # </datafield>
                   when 'accessrestrict'
                     ind1 = note['publish'] ? '1' : '0'
-                    if note['rights_restriction']
-                      result = note['rights_restriction']['local_access_restriction_type']
-                      if result != []
-                        result.each do |lart|
-                          df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
+                    if note['publish'] || @include_unpublished
+                      if note['rights_restriction']
+                        result = note['rights_restriction']['local_access_restriction_type']
+                        if result != []
+                          result.each do |lart|
+                            df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
+                          end
+                        else
+                          df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']])
                         end
                       else
-                        df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']])
+                        ['506', ind1 ,'', 'a']
                       end
-                    else
-                      ['506', ind1 ,'', 'a']
                     end
                   when 'scopecontent'
                     ['520', '2', ' ', 'a']
@@ -161,7 +163,7 @@ class MARCModel < ASpaceExport::ExportModel
     end
   end
 
-	#Remove 555 from ead_loc export, we're doing it above with fa note
+  #Remove 555 from ead_loc export, we're doing it above with fa note
   def handle_ead_loc(ead_loc)
     df('856', '4', '2').with_sfs(
                                 ['z', "Finding aid online:"],
