@@ -6,7 +6,7 @@ class MARCModel < ASpaceExport::ExportModel
   #don't export empty fields when using df_handler
   def self.df_handler(name, tag, ind1, ind2, code)
     define_method(name) do |val|
-      if val
+      if val && !val.strip.empty?
         df(tag, ind1, ind2).with_sfs([code, val])
       end
     end
