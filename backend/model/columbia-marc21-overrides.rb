@@ -13,6 +13,15 @@ class MARCModel < ASpaceExport::ExportModel
     name.to_sym
   end
 
+  @archival_object_map = {
+    [:repository, :user_defined, :finding_aid_language] => :handle_repo_code,
+    [:title, :linked_agents, :dates] => :handle_title,
+    :linked_agents => :handle_agents,
+    :subjects => :handle_subjects,
+    :extents => :handle_extents,
+    :lang_materials => :handle_languages
+  }
+
   @resource_map = {
     [:id_0, :id_1, :id_2, :id_3] => :handle_id,
     :notes => :handle_notes,
@@ -59,6 +68,45 @@ class MARCModel < ASpaceExport::ExportModel
   #Should be fixed upstream soon
   def handle_language(langcode)
     df('041', '0', ' ').with_sfs(['a', langcode])
+  end
+
+  def handle_repo_code(repository, user_defined, *finding_aid_language)
+    repo = repository['_resolved']
+    return false unless repo
+
+    #If string_1 starts with UA, repo code is NNC-UA
+    if user_defined['string_1'].start_with?("UA")
+      repo['org_code'] = "NNC-UA"
+    end
+
+    sfa = repo['org_code'] ? repo['org_code'] : "Repository: #{repo['repo_code']}"
+
+    # ANW-529: options for 852 datafield:
+    # 1.) $a => org_code || repo_name
+    # 2.) $a => $parent_institution_name && $b => repo_name
+
+    if repo['parent_institution_name']
+      subfields_852 = [
+                        ['a', repo['parent_institution_name']],
+                        ['b', repo['name']]
+                      ]
+    elsif repo['org_code']
+      subfields_852 = [
+                        ['a', repo['org_code']],
+                      ]
+    else
+      subfields_852 = [
+                        ['a', repo['name']]
+                      ]
+    end
+
+    df('852', ' ', ' ').with_sfs(*subfields_852)
+
+    df('040', ' ', ' ').with_sfs(['a', repo['org_code']], ['b', finding_aid_language[0]], ['c', repo['org_code']])
+
+    if repo['org_code']
+      df('049', ' ', ' ').with_sfs(['a', repo['org_code']])
+    end
   end
 
   def handle_user_defined(user_defined)
