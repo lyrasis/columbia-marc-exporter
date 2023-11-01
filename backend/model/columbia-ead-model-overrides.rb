@@ -5,7 +5,7 @@ class EADModel < ASpaceExport::ExportModel
   include ASpaceExport::LazyChildEnumerations
 
   def mainagencycode
-    if user_defined['string_1'].start_with?("UA")
+    if (user_defined['string_1'] && user_defined['string_1'].start_with?("UA"))
       repo['org_code'] = "NNC-UA"
     end
     @mainagencycode ||= repo.country && repo.org_code ? [repo.country, repo.org_code].join('-') : nil

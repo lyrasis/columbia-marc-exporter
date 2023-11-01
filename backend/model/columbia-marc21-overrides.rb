@@ -75,7 +75,7 @@ class MARCModel < ASpaceExport::ExportModel
     return false unless repo
 
     #If string_1 starts with UA, repo code is NNC-UA
-    if user_defined['string_1'].start_with?("UA")
+    if (user_defined['string_1'] && user_defined['string_1'].start_with?("UA"))
       repo['org_code'] = "NNC-UA"
     end
 
