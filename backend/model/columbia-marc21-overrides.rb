@@ -70,7 +70,7 @@ class MARCModel < ASpaceExport::ExportModel
     df('041', '0', ' ').with_sfs(['a', langcode])
   end
 
-  def handle_repo_code(repository, user_defined, *finding_aid_language)
+  def handle_repo_code(repository, user_defined = nil, *finding_aid_language)
     repo = repository['_resolved']
     return false unless repo
 
@@ -102,7 +102,11 @@ class MARCModel < ASpaceExport::ExportModel
 
     df('852', ' ', ' ').with_sfs(*subfields_852)
 
-    df('040', ' ', ' ').with_sfs(['a', repo['org_code']], ['b', finding_aid_language[0]], ['c', repo['org_code']])
+    if finding_aid_language[0]
+      df('040', ' ', ' ').with_sfs(['a', repo['org_code']], ['b', finding_aid_language[0]], ['c', repo['org_code']])
+    else
+      df('040', ' ', ' ').with_sfs(['a', repo['org_code']], ['c', repo['org_code']])
+    end
 
     if repo['org_code']
       df('049', ' ', ' ').with_sfs(['a', repo['org_code']])
