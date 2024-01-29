@@ -64,12 +64,6 @@ class MARCModel < ASpaceExport::ExportModel
     end
   end
 
-  #Don't export language to random 04x fields
-  #Should be fixed upstream soon
-  def handle_language(langcode)
-    df('041', '0', ' ').with_sfs(['a', langcode])
-  end
-
   def handle_repo_code(repository, user_defined = nil, *finding_aid_language)
     repo = repository['_resolved']
     return false unless repo
