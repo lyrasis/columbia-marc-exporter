@@ -94,7 +94,7 @@ class MARCModel < ASpaceExport::ExportModel
   #Remove processinfo from 500 mapping and move to 583
   def handle_notes(notes)
 
-    notes.each do |note|
+    notes.each_with_index do |note, i|
 
       prefix =  case note['type']
                 when 'dimensions'; "Dimensions"
@@ -127,13 +127,13 @@ class MARCModel < ASpaceExport::ExportModel
                         result = note['rights_restriction']['local_access_restriction_type']
                         if result != []
                           result.each do |lart|
-                            df('506', ind1, ' ').with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
+                            df('506', ind1, ' ', i).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
                           end
                         else
-                          df('506', ind1, ' ').with_sfs(['a', note['subnotes'][0]['content']])
+                          df('506', ind1, ' ', i).with_sfs(['a', note['subnotes'][0]['content']])
                         end
                       else
-                        ['506', ind1 ,'', 'a']
+                        df('506', ind1, ' ', i).with_sfs(['a', note['subnotes'][0]['content']])
                       end
                     end
                   when 'scopecontent'
