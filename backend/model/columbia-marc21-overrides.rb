@@ -132,8 +132,6 @@ class MARCModel < ASpaceExport::ExportModel
                         else
                           df('506', ind1, ' ', i).with_sfs(['a', note['subnotes'][0]['content']])
                         end
-                      else
-                        df('506', ind1, ' ', i).with_sfs(['a', note['subnotes'][0]['content']])
                       end
                     end
                   when 'scopecontent'
