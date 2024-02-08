@@ -31,28 +31,6 @@ class MARCModel < ASpaceExport::ExportModel
     :ead_location => :handle_ead_loc
   }
 
-  #Picked from new release, but added 035
-  def df(*args)
-    if @datafields.has_key?(args.to_s)
-      # Manny Rodriguez: 3/16/18
-      # Bugfix for ANW-146
-      # Separate creators should go in multiple 700 fields in the output MARCXML file. This is not happening because the different 700 fields are getting mashed in under the same key in the hash below, instead of having a new hash entry created.
-      # So, we'll get around that by using a different hash key if the code is 700.
-      # based on MARCModel#datafields, it looks like the hash keys are thrown away outside of this class, so we can use anything as a key.
-      # At the moment, we don't want to change this behavior too much in case something somewhere else is relying on the original behavior.
-
-     if(args[0] == "700" || args[0] == "710" || args[0] == "035" || args[0] == "506")
-       @datafields[rand(10000)] = @@datafield.new(*args)
-     else
-       @datafields[args.to_s]
-     end
-    else
-
-      @datafields[args.to_s] = @@datafield.new(*args)
-      @datafields[args.to_s]
-    end
-  end
-
   #Add an 035 based on string + id0
   def handle_id(*ids)
     ids.reject!{|i| i.nil? || i.empty?}
@@ -60,17 +38,11 @@ class MARCModel < ASpaceExport::ExportModel
       df('099', ' ', ' ').with_sfs(['a', ids.join('.')])
       df('852', ' ', ' ').with_sfs(['c', ids.join('.')])
       last035 = 'CULASPC-' + ids[0]
-      df('035', ' ', ' ').with_sfs(['a', last035])
+      df('035', ' ', ' ', 5).with_sfs(['a', last035])
     end
   end
 
-  #Don't export language to random 04x fields
-  #Should be fixed upstream soon
-  def handle_language(langcode)
-    df('041', '0', ' ').with_sfs(['a', langcode])
-  end
-
-  def handle_repo_code(repository, user_defined, *finding_aid_language)
+  def handle_repo_code(repository, user_defined = nil, *finding_aid_language)
     repo = repository['_resolved']
     return false unless repo
 
@@ -102,7 +74,11 @@ class MARCModel < ASpaceExport::ExportModel
 
     df('852', ' ', ' ').with_sfs(*subfields_852)
 
-    df('040', ' ', ' ').with_sfs(['a', repo['org_code']], ['b', finding_aid_language[0]], ['c', repo['org_code']])
+    if finding_aid_language[0]
+      df('040', ' ', ' ').with_sfs(['a', repo['org_code']], ['b', finding_aid_language[0]], ['c', repo['org_code']])
+    else
+      df('040', ' ', ' ').with_sfs(['a', repo['org_code']], ['c', repo['org_code']])
+    end
 
     if repo['org_code']
       df('049', ' ', ' ').with_sfs(['a', repo['org_code']])
@@ -111,16 +87,14 @@ class MARCModel < ASpaceExport::ExportModel
 
   def handle_user_defined(user_defined)
     return false if user_defined.nil?
-    df('852', ' ', ' ').with_sfs(['j', user_defined['string_1']])
-    df('035', ' ', ' ').with_sfs(['a', user_defined['string_2']])
-    df('035', ' ', ' ').with_sfs(['a', user_defined['string_3']])
-    df('035', ' ', ' ').with_sfs(['a', user_defined['string_4']])
+    df('852', ' ', ' ').with_sfs(['j', user_defined['string_1']]) if (user_defined['string_1'])
+    [user_defined['string_2'], user_defined['string_3'], user_defined['string_4']].delete_if{|j| j.nil? || j.empty?}.each_with_index{|x,i| df('035', ' ', ' ', i).with_sfs(['a', x])}
   end
 
   #Remove processinfo from 500 mapping and move to 583
   def handle_notes(notes)
 
-    notes.each do |note|
+    notes.each_with_index do |note, i|
 
       prefix =  case note['type']
                 when 'dimensions'; "Dimensions"
@@ -153,13 +127,11 @@ class MARCModel < ASpaceExport::ExportModel
                         result = note['rights_restriction']['local_access_restriction_type']
                         if result != []
                           result.each do |lart|
-                            df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
+                            df('506', ind1, ' ', i).with_sfs(['a', note['subnotes'][0]['content']], ['f', lart])
                           end
                         else
-                          df('506', ind1).with_sfs(['a', note['subnotes'][0]['content']])
+                          df('506', ind1, ' ', i).with_sfs(['a', note['subnotes'][0]['content']])
                         end
-                      else
-                        ['506', ind1 ,'', 'a']
                       end
                     end
                   when 'scopecontent'
