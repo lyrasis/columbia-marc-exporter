@@ -6,6 +6,7 @@ class EADSerializer < ASpaceExport::Serializer
     @fragments = ASpaceExport::RawXMLHandler.new
     @include_unpublished = data.include_unpublished?
     @include_daos = data.include_daos?
+    @include_uris = data.include_uris?    
     @use_numbered_c_tags = data.use_numbered_c_tags?
     @id_prefix = I18n.t('archival_object.ref_id_export_prefix', :default => 'aspace_')
 
@@ -64,6 +65,10 @@ class EADSerializer < ASpaceExport::Serializer
 
             if (languages = data.lang_materials)
               serialize_languages(languages, xml, @fragments)
+            end
+
+            if @include_uris
+              serialize_aspace_uri(data, xml)
             end
 
             serialize_extents(data, xml, @fragments)
