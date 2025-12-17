@@ -136,7 +136,7 @@ class EADSerializer < ASpaceExport::Serializer
   top = sub['top_container']['_resolved']
 
   # Use top_container uri as @id
-  atts[:id] = top['uri'].tr('/', '.')
+  atts[:id] = top['uri'].tr('/', '.').gsub(/^\./,"")
   last_id = atts[:id]
 
   atts[:type] = top['type'] unless (top['type'].nil? || top['type'].empty?)
