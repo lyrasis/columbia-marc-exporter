@@ -129,4 +129,49 @@ class EADSerializer < ASpaceExport::Serializer
 
 
   end
+  def serialize_container(inst, xml, fragments)
+  atts = {}
+
+  sub = inst['sub_container']
+  top = sub['top_container']['_resolved']
+
+  # Use top_container uri as @id with auto-incremental suffix
+  @container_sequence ||= 0
+  @container_sequence += 1
+  base_uri = top['uri'].tr('/', '.').gsub(/^\./,"")
+  atts[:id] = "#{base_uri}.#{@container_sequence}"
+  last_id = atts[:id]
+
+  atts[:type] = top['type'] unless (top['type'].nil? || top['type'].empty?)
+  text = top['indicator']
+
+  atts[:label] = I18n.t("enumerations.instance_instance_type.#{inst['instance_type']}",
+                        :default => inst['instance_type'])
+  atts[:label] << " [#{top['barcode']}]" if top['barcode']
+
+  if (cp = top['container_profile'])
+    atts[:altrender] = cp['_resolved']['url'] || cp['_resolved']['name']
+  end
+
+  xml.container(atts) {
+    sanitize_mixed_content(text, xml, fragments)
+  }
+
+  (2..3).each do |n|
+    atts = {}
+    next unless sub["type_#{n}"]
+
+    atts[:id] = prefix_id(SecureRandom.hex)
+    atts[:parent] = last_id
+    last_id = atts[:id]
+
+    atts[:type] = sub["type_#{n}"]
+    text = sub["indicator_#{n}"]
+
+    xml.container(atts) {
+      sanitize_mixed_content(text, xml, fragments)
+    }
+  end
+end
+
 end
